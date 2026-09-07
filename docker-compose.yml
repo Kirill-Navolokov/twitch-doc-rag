@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-twitch_docs_rag}
+      POSTGRES_USER: ${POSTGRES_USER:-twitch_docs_rag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-twitch_docs_rag}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-twitch_docs_rag}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-alpine
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-twitch_docs_rag}
+      POSTGRES_USER: ${POSTGRES_USER:-twitch_docs_rag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-twitch_docs_rag}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-amqp://guest:guest@rabbitmq:5672//}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-insecure-local-development-key}
+    volumes:
+      - ./worker:/app/worker
+      - ./shared:/app/shared
+      - ./docs:/app/docs
+      - ./ruff.toml:/app/ruff.toml
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

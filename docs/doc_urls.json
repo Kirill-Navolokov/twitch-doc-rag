@@ -1,0 +1,25 @@
+[
+    "https://dev.twitch.tv/docs/",
+
+    "https://dev.twitch.tv/docs/api/",
+    "https://dev.twitch.tv/docs/api/get-started/",
+    "https://dev.twitch.tv/docs/api/raids/",
+    "https://dev.twitch.tv/docs/api/goals/",
+    "https://dev.twitch.tv/docs/api/polls/",
+    "https://dev.twitch.tv/docs/api/predictions/",
+    "https://dev.twitch.tv/docs/api/clips/",
+    "https://dev.twitch.tv/docs/api/markers/",
+    "https://dev.twitch.tv/docs/api/videos/",
+    "https://dev.twitch.tv/docs/api/schedule/",
+    "https://dev.twitch.tv/docs/api/guide/",
+    "https://dev.twitch.tv/docs/api/reference/",
+
+    "https://dev.twitch.tv/docs/eventsub/",
+    "https://dev.twitch.tv/docs/eventsub/handling-webhook-events/",
+    "https://dev.twitch.tv/docs/eventsub/handling-websocket-events/",
+    "https://dev.twitch.tv/docs/eventsub/handling-conduit-events/",
+    "https://dev.twitch.tv/docs/eventsub/manage-subscriptions/",
+    "https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/",
+    "https://dev.twitch.tv/docs/eventsub/eventsub-reference/",
+    "https://dev.twitch.tv/docs/eventsub/websocket-reference/"
+]

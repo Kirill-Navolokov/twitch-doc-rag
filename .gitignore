@@ -25,3 +25,6 @@ out/
 # Editors
 .vscode/
 .idea/
+
+# Workflow orchestration state (local task planning/scratch, not project code)
+.agent/

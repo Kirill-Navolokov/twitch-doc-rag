@@ -35,7 +35,15 @@ Project scaffolding in progress. This section will be updated as each feature la
 ## Running locally
 
 ```
-docker-compose up
+cp .env.example .env      # optional — compose falls back to local-development defaults
+docker compose up
 ```
 
-(Compose setup lands with the first service implementation.)
+Brings up `postgres`, `rabbitmq`, and the Celery `worker` (which applies migrations on start).
+`api`, `frontend`, and Weaviate land with later features.
+
+Trigger a doc ingestion run over the URLs listed in `docs/doc_urls.json`:
+
+```
+docker compose exec worker python manage.py run_ingestion
+```
