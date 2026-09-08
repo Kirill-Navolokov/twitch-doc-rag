@@ -11,6 +11,11 @@ RUN pip install --no-cache-dir -r /app/worker/requirements.txt
 COPY shared /app/shared
 RUN pip install --no-cache-dir -e /app/shared
 
+# voyage-3.5's tokenizer (used for the chunk-size cap) is pulled from the HuggingFace hub on first
+# use. Bake it into the image and pin the hub offline so chunking never makes a network call.
+RUN python -c "import voyageai; voyageai.Client().tokenizer('voyage-3.5')"
+ENV HF_HUB_OFFLINE=1
+
 COPY ruff.toml /app/ruff.toml
 COPY worker /app/worker
 COPY docs /app/docs

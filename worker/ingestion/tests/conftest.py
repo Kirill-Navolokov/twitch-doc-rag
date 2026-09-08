@@ -6,6 +6,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pytest_django.fixtures import SettingsWrapper
 
+from shared import voyage
+
+EMBEDDING_DIMENSIONS = 1024
+
 PAGE_TEMPLATE = """<html><head><title>{title}</title></head><body><article>
 <h1>{title}</h1>
 <p>Authenticating a request against the Twitch Helix API requires a client id header as well
@@ -57,4 +61,35 @@ def sleep() -> Iterator[MagicMock]:
 @pytest.fixture
 def http_get() -> Iterator[MagicMock]:
     with patch("ingestion.tasks.requests.get") as mock:
+        yield mock
+
+
+def fake_embeddings(texts: list[str]) -> list[list[float]]:
+    return [[float(len(text))] * EMBEDDING_DIMENSIONS for text in texts]
+
+
+@pytest.fixture
+def embed() -> Iterator[MagicMock]:
+    with patch("ingestion.tasks.embed_documents", side_effect=fake_embeddings) as mock:
+        yield mock
+
+
+# Autouse so no test can reach the Celery broker: run_ingestion() chains chunking per document.
+@pytest.fixture(autouse=True)
+def queue_chunking() -> Iterator[MagicMock]:
+    with patch("ingestion.tasks.chunk_document.delay") as mock:
+        yield mock
+
+
+@pytest.fixture
+def voyage_client() -> Iterator[MagicMock]:
+    voyage._client.cache_clear()
+    with patch("shared.voyage.voyageai.Client") as client_class:
+        yield client_class.return_value
+    voyage._client.cache_clear()
+
+
+@pytest.fixture
+def voyage_sleep() -> Iterator[MagicMock]:
+    with patch("shared.voyage.time.sleep") as mock:
         yield mock

@@ -8,6 +8,7 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = False
 
 INSTALLED_APPS = [
+    "django.contrib.postgres",
     "shared",
     "ingestion",
 ]
@@ -35,6 +36,8 @@ CELERY_BROKER_URL = os.environ["CELERY_BROKER_URL"]
 CELERY_WORKER_ENABLE_REMOTE_CONTROL = False
 
 DOC_URLS_PATH = REPO_ROOT / "docs" / "doc_urls.json"
+
+VOYAGE_API_KEY = os.environ["VOYAGE_API_KEY"]
 
 LOGGING = {
     "version": 1,

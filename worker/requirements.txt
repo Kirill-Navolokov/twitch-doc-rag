@@ -3,6 +3,7 @@ celery==5.5.3
 psycopg[binary]==3.2.10
 requests==2.32.5
 trafilatura==2.0.0
+voyageai==0.5.0
 
 pytest==8.4.2
 pytest-django==4.11.1

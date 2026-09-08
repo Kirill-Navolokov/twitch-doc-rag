@@ -1,5 +1,6 @@
 import uuid
 
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
 
@@ -14,11 +15,31 @@ class Document(models.Model):
     title = models.CharField(max_length=512, blank=True)
     raw_text = models.TextField(blank=True)
     content_hash = models.CharField(max_length=64, blank=True)
+    # Equal to content_hash once the current text has been chunked and embedded; any difference
+    # (including the empty initial value) marks the document as pending chunking.
+    chunked_content_hash = models.CharField(max_length=64, blank=True, default="")
     fetched_at = models.DateTimeField()
     status = models.CharField(max_length=16, choices=FetchStatus.choices)
 
     def __str__(self) -> str:
         return self.source_url
+
+
+class Chunk(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="chunks")
+    chunk_index = models.IntegerField()
+    text = models.TextField()
+    # Plain Postgres array rather than pgvector: similarity search happens in Weaviate, so this
+    # table only stages embeddings on their way there.
+    embedding = ArrayField(models.FloatField(), size=1024)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["chunk_index"]
+
+    def __str__(self) -> str:
+        return f"{self.document_id}#{self.chunk_index}"
 
 
 class DocumentProcessingLog(models.Model):
