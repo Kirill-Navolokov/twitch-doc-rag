@@ -1,12 +1,15 @@
 import json
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from pytest_django.fixtures import SettingsWrapper
+from weaviate.classes.data import DataObject
+from weaviate.collections.classes.filters import _FilterValue
 
-from shared import voyage
+from shared import voyage, weaviate_client
 
 EMBEDDING_DIMENSIONS = 1024
 
@@ -79,6 +82,82 @@ def embed() -> Iterator[MagicMock]:
 def queue_chunking() -> Iterator[MagicMock]:
     with patch("ingestion.tasks.chunk_document.delay") as mock:
         yield mock
+
+
+# Autouse for the same reason: chunk_document() chains indexing per document.
+@pytest.fixture(autouse=True)
+def queue_indexing() -> Iterator[MagicMock]:
+    with patch("ingestion.tasks.index_chunks.delay") as mock:
+        yield mock
+
+
+@dataclass(frozen=True)
+class WeaviateIndexMocks:
+    ensure_schema: MagicMock
+    delete_document: MagicMock
+    insert_chunks: MagicMock
+
+
+@pytest.fixture
+def weaviate_index() -> Iterator[WeaviateIndexMocks]:
+    with (
+        patch("ingestion.tasks.ensure_schema") as ensure,
+        patch("ingestion.tasks.delete_document") as delete,
+        patch("ingestion.tasks.insert_chunks") as insert,
+    ):
+        yield WeaviateIndexMocks(ensure_schema=ensure, delete_document=delete, insert_chunks=insert)
+
+
+@pytest.fixture
+def weaviate_connection() -> Iterator[MagicMock]:
+    weaviate_client._client.cache_clear()
+    with patch("shared.weaviate_client.weaviate.connect_to_custom") as connect:
+        yield connect.return_value
+    weaviate_client._client.cache_clear()
+
+
+@dataclass(frozen=True)
+class IndexedObject:
+    document_id: str
+    chunk_index: int
+    text: str
+    source_url: str
+    title: str
+    vector: list[float]
+
+
+@dataclass(frozen=True)
+class FakeBatchReturn:
+    has_errors: bool
+    errors: dict[int, str]
+
+
+class FakeCollection:
+    """In-memory DocChunk stand-in, so tests can assert what indexing actually left behind."""
+
+    def __init__(self) -> None:
+        self.objects: list[IndexedObject] = []
+        self.rejected_indexes: set[int] = set()
+
+    def insert_many(self, objects: list[DataObject]) -> FakeBatchReturn:
+        for index, obj in enumerate(objects):
+            if index not in self.rejected_indexes:
+                self.objects.append(IndexedObject(vector=obj.vector, **obj.properties))
+        errors = dict.fromkeys(self.rejected_indexes, "rejected by weaviate")
+        return FakeBatchReturn(has_errors=bool(errors), errors=errors)
+
+    def delete_many(self, where: _FilterValue) -> None:
+        self.objects = [obj for obj in self.objects if obj.document_id != where.value]
+
+
+@pytest.fixture
+def weaviate_store(weaviate_connection: MagicMock) -> FakeCollection:
+    collection = FakeCollection()
+    weaviate_connection.collections.exists.return_value = True
+    data = weaviate_connection.collections.get.return_value.data
+    data.insert_many.side_effect = collection.insert_many
+    data.delete_many.side_effect = collection.delete_many
+    return collection
 
 
 @pytest.fixture

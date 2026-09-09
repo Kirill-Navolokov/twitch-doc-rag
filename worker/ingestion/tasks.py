@@ -13,6 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 from shared.models import Chunk, Document, DocumentProcessingLog, FetchStatus
 from shared.voyage import embed_documents
+from shared.weaviate_client import ChunkForIndex, delete_document, ensure_schema, insert_chunks
 
 from ingestion.chunker import chunk_markdown
 from ingestion.models import IngestionRun
@@ -184,6 +185,8 @@ def chunk_document(document_id: str, document_processing_log_id: str | None = No
         document.chunked_content_hash = document.content_hash
         document.save(update_fields=["chunked_content_hash"])
 
+    index_chunks.delay(document_id=str(document.id))
+
     if document_processing_log_id is not None:
         record_chunking_durations(
             document_processing_log_id, chunk_duration_ms, len(texts), embed_duration_ms
@@ -191,3 +194,38 @@ def chunk_document(document_id: str, document_processing_log_id: str | None = No
 
     logger.info("chunk url=%s result=success chunks=%d", document.source_url, len(texts))
     return len(texts)
+
+
+@shared_task
+def index_chunks(document_id: str) -> int:
+    pending = list(
+        Chunk.objects.filter(document_id=document_id, indexed_at__isnull=True).select_related(
+            "document"
+        )
+    )
+    # Without this guard a second call for an already-indexed document would delete its Weaviate
+    # objects and reinsert nothing, and the non-null indexed_at would hide the loss from the
+    # run_indexing catch-up scan.
+    if not pending:
+        logger.info("index document=%s result=skipped reason=no unindexed chunks", document_id)
+        return 0
+
+    ensure_schema()
+    delete_document(document_id)
+    insert_chunks(
+        [
+            ChunkForIndex(
+                document_id=document_id,
+                chunk_index=chunk.chunk_index,
+                text=chunk.text,
+                source_url=chunk.document.source_url,
+                title=chunk.document.title,
+                embedding=chunk.embedding,
+            )
+            for chunk in pending
+        ]
+    )
+    Chunk.objects.filter(id__in=[chunk.id for chunk in pending]).update(indexed_at=timezone.now())
+
+    logger.info("index document=%s result=success chunks=%d", document_id, len(pending))
+    return len(pending)

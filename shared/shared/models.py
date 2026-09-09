@@ -34,6 +34,9 @@ class Chunk(models.Model):
     # table only stages embeddings on their way there.
     embedding = ArrayField(models.FloatField(), size=1024)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Null until this chunk has been confirmed written to Weaviate; chunking recreates every chunk
+    # row on reprocess, so a reprocessed document's chunks are automatically eligible again.
+    indexed_at = models.DateTimeField(null=True, blank=True, default=None)
 
     class Meta:
         ordering = ["chunk_index"]

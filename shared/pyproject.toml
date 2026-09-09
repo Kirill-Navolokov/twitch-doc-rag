@@ -7,7 +7,7 @@ name = "shared"
 version = "0.1.0"
 description = "Postgres models and provider clients shared by the worker and api projects."
 requires-python = ">=3.13"
-dependencies = ["Django>=5.2,<6.0", "voyageai>=0.5,<0.6"]
+dependencies = ["Django>=5.2,<6.0", "voyageai>=0.5,<0.6", "weaviate-client>=4.23,<5.0"]
 
 [tool.setuptools.packages.find]
 include = ["shared*"]

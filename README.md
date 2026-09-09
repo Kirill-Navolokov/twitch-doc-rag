@@ -29,7 +29,7 @@ Project scaffolding in progress. This section will be updated as each feature la
 
 - [x] Doc Ingestion
 - [x] Chunking & Embedding
-- [ ] Vector Store & Retrieval
+- [x] Vector Store & Retrieval
 - [ ] LLM Integration
 - [ ] RAG Answer API
 - [ ] Chat Frontend
@@ -41,8 +41,9 @@ cp .env.example .env      # optional — compose falls back to local-development
 docker compose up
 ```
 
-Brings up `postgres`, `rabbitmq`, and the Celery `worker` (which applies migrations on start).
-`api`, `frontend`, and Weaviate land with later features.
+Brings up `postgres`, `rabbitmq`, `weaviate`, the Celery `worker` (which applies migrations on
+start), and `api` on port 8000. `api` serves no routes yet — the answer endpoint lands with a later
+feature. `frontend` lands with a later feature too.
 
 Chunking and embedding need a Voyage AI key (free tier) in `.env`:
 
@@ -62,4 +63,17 @@ to the chunking algorithm):
 
 ```
 docker compose exec worker python manage.py run_chunking
+```
+
+Index every chunk that isn't in Weaviate yet (chunking chains this automatically; the command is
+the catch-up pass for chunks whose indexing attempt failed):
+
+```
+docker compose exec worker python manage.py run_indexing
+```
+
+Check what a question retrieves, with hybrid relevance scores and source URLs:
+
+```
+docker compose exec api python manage.py retrieve_query "How do I get an app access token?"
 ```

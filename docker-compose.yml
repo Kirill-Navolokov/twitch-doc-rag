@@ -21,6 +21,23 @@ services:
       timeout: 10s
       retries: 10
 
+  weaviate:
+    image: semitechnologies/weaviate:1.39.3
+    environment:
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: /var/lib/weaviate
+      # No embedding module: every vector is supplied by the worker from Chunk.embedding.
+      DEFAULT_VECTORIZER_MODULE: none
+      ENABLE_MODULES: ""
+      CLUSTER_HOSTNAME: node1
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/v1/.well-known/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   worker:
     build:
       context: .
@@ -34,6 +51,7 @@ services:
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:-amqp://guest:guest@rabbitmq:5672//}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-insecure-local-development-key}
       VOYAGE_API_KEY: ${VOYAGE_API_KEY:-}
+      WEAVIATE_URL: ${WEAVIATE_URL:-http://weaviate:8080}
     volumes:
       - ./worker:/app/worker
       - ./shared:/app/shared
@@ -44,6 +62,34 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      weaviate:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-twitch_docs_rag}
+      POSTGRES_USER: ${POSTGRES_USER:-twitch_docs_rag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-twitch_docs_rag}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-insecure-local-development-key}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY:-}
+      WEAVIATE_URL: ${WEAVIATE_URL:-http://weaviate:8080}
+    volumes:
+      - ./api:/app/api
+      - ./shared:/app/shared
+      - ./ruff.toml:/app/ruff.toml
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      weaviate:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  weaviate_data:

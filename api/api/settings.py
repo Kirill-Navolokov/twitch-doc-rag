@@ -1,17 +1,18 @@
 import os
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-REPO_ROOT = BASE_DIR.parent
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = False
+# The dev server only ever runs behind Docker Compose, where the host header is the service name.
+ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
     "django.contrib.postgres",
     "shared",
-    "ingestion",
+    "retrieval",
 ]
+
+ROOT_URLCONF = "api.urls"
+WSGI_APPLICATION = "api.wsgi.application"
 
 DATABASES = {
     "default": {
@@ -28,14 +29,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 USE_TZ = True
 TIME_ZONE = "UTC"
-
-CELERY_BROKER_URL = os.environ["CELERY_BROKER_URL"]
-# The remote-control mailbox declares a transient non-exclusive queue, which RabbitMQ 4 refuses by
-# default. Nothing here uses remote control, so turn it off rather than re-enabling a deprecated
-# broker feature (gossip, which declares the same kind of queue, is disabled on the command line).
-CELERY_WORKER_ENABLE_REMOTE_CONTROL = False
-
-DOC_URLS_PATH = REPO_ROOT / "docs" / "doc_urls.json"
 
 VOYAGE_API_KEY = os.environ["VOYAGE_API_KEY"]
 
