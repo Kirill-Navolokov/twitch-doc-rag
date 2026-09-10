@@ -30,7 +30,7 @@ Project scaffolding in progress. This section will be updated as each feature la
 - [x] Doc Ingestion
 - [x] Chunking & Embedding
 - [x] Vector Store & Retrieval
-- [ ] LLM Integration
+- [x] LLM Integration
 - [ ] RAG Answer API
 - [ ] Chat Frontend
 
@@ -45,11 +45,15 @@ Brings up `postgres`, `rabbitmq`, `weaviate`, the Celery `worker` (which applies
 start), and `api` on port 8000. `api` serves no routes yet — the answer endpoint lands with a later
 feature. `frontend` lands with a later feature too.
 
-Chunking and embedding need a Voyage AI key (free tier) in `.env`:
+Chunking and embedding need a Voyage AI key (free tier), and answering needs a Groq key (free
+tier), both in `.env`:
 
 ```
 VOYAGE_API_KEY=your-key
+GROQ_API_KEY=your-key
 ```
+
+`GROQ_MODEL` defaults to `openai/gpt-oss-120b`; set it in `.env` to switch models.
 
 Trigger a doc ingestion run over the URLs listed in `docs/doc_urls.json` — each successfully
 fetched page is chunked and embedded straight after:
@@ -76,4 +80,11 @@ Check what a question retrieves, with hybrid relevance scores and source URLs:
 
 ```
 docker compose exec api python manage.py retrieve_query "How do I get an app access token?"
+```
+
+Answer a question from those chunks, printing the citations first (add `--stream` to watch the
+answer arrive token by token):
+
+```
+docker compose exec api python manage.py generate_answer "How do I get an app access token?"
 ```

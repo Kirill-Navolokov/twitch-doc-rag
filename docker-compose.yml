@@ -78,6 +78,8 @@ services:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-insecure-local-development-key}
       VOYAGE_API_KEY: ${VOYAGE_API_KEY:-}
       WEAVIATE_URL: ${WEAVIATE_URL:-http://weaviate:8080}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
     volumes:
       - ./api:/app/api
       - ./shared:/app/shared

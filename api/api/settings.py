@@ -34,6 +34,10 @@ VOYAGE_API_KEY = os.environ["VOYAGE_API_KEY"]
 
 WEAVIATE_URL = os.environ["WEAVIATE_URL"]
 
+GROQ_API_KEY = os.environ["GROQ_API_KEY"]
+
+GROQ_MODEL = os.environ["GROQ_MODEL"]
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
