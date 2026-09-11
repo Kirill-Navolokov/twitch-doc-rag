@@ -1,1 +1,22 @@
-[]
+[
+    {"question": "How do I create a channel points prediction?", "expected": "in_scope"},
+    {"question": "What scope do I need to start a raid?", "expected": "in_scope"},
+    {"question": "How do I get an app access token?", "expected": "in_scope"},
+    {"question": "How do I create a poll on a channel?", "expected": "in_scope"},
+    {"question": "How do I set a creator goal for a broadcaster?", "expected": "in_scope"},
+    {"question": "How do I create a stream marker?", "expected": "in_scope"},
+    {"question": "How do I get a list of videos for a broadcaster?", "expected": "in_scope"},
+    {"question": "How do I get a broadcaster's stream schedule?", "expected": "in_scope"},
+    {"question": "How do I create a clip from a live stream?", "expected": "in_scope"},
+    {"question": "What is required to register a Twitch application?", "expected": "in_scope"},
+    {"question": "What is the best recipe for sourdough bread?", "expected": "out_of_scope"},
+    {"question": "Who won the last soccer World Cup?", "expected": "out_of_scope"},
+    {"question": "How do I file my income taxes this year?", "expected": "out_of_scope"},
+    {"question": "What is the capital of Australia?", "expected": "out_of_scope"},
+    {"question": "How do I change the oil in my car?", "expected": "out_of_scope"},
+    {"question": "What's a good beginner workout routine?", "expected": "out_of_scope"},
+    {"question": "How do I train a neural network in PyTorch?", "expected": "out_of_scope"},
+    {"question": "What are the health benefits of green tea?", "expected": "out_of_scope"},
+    {"question": "How do I book a flight to Tokyo?", "expected": "out_of_scope"},
+    {"question": "What is the plot of Romeo and Juliet?", "expected": "out_of_scope"}
+]

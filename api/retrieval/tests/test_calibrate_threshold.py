@@ -46,6 +46,12 @@ def close_client() -> Iterator[MagicMock]:
         yield mock
 
 
+@pytest.fixture
+def calibrate_sleep() -> Iterator[MagicMock]:
+    with patch("retrieval.management.commands.calibrate_threshold.time.sleep") as mock:
+        yield mock
+
+
 def test_the_top_score_of_every_question_is_grouped_under_its_expected_label(
     question_file: Callable[[list[dict[str, str]]], Path], search: MagicMock
 ) -> None:
@@ -91,3 +97,30 @@ def test_the_one_shot_command_closes_its_weaviate_connection(
 
 def test_the_shipped_question_file_is_a_readable_list(settings: SettingsWrapper) -> None:
     assert json.loads(settings.CALIBRATION_QUESTIONS_PATH.read_text()) == []
+
+
+def test_consecutive_questions_are_paced_under_voyages_free_tier_rate_limit(
+    question_file: Callable[[list[dict[str, str]]], Path],
+    search: MagicMock,
+    calibrate_sleep: MagicMock,
+) -> None:
+    question_file(QUESTIONS)
+    search.side_effect = lambda **kwargs: HITS[kwargs["query_text"]]
+
+    call_command("calibrate_threshold", stdout=StringIO())
+
+    # 3 questions -> 2 gaps between them, never a delay before the first Voyage call.
+    assert calibrate_sleep.call_args_list == [((20,),), ((20,),)]
+
+
+def test_a_single_question_needs_no_pacing(
+    question_file: Callable[[list[dict[str, str]]], Path],
+    search: MagicMock,
+    calibrate_sleep: MagicMock,
+) -> None:
+    question_file([QUESTIONS[0]])
+    search.side_effect = lambda **kwargs: HITS[kwargs["query_text"]]
+
+    call_command("calibrate_threshold", stdout=StringIO())
+
+    calibrate_sleep.assert_not_called()
