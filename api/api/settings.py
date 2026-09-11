@@ -1,4 +1,8 @@
 import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = BASE_DIR.parent
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = False
@@ -10,6 +14,14 @@ INSTALLED_APPS = [
     "shared",
     "retrieval",
 ]
+
+# The project has no accounts, so DRF's default session/basic authentication has nothing to
+# authenticate against — and the AnonymousUser it otherwise falls back to would pull
+# django.contrib.auth and its tables into a project that owns no migration history.
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "UNAUTHENTICATED_USER": None,
+}
 
 ROOT_URLCONF = "api.urls"
 WSGI_APPLICATION = "api.wsgi.application"
@@ -37,6 +49,12 @@ WEAVIATE_URL = os.environ["WEAVIATE_URL"]
 GROQ_API_KEY = os.environ["GROQ_API_KEY"]
 
 GROQ_MODEL = os.environ["GROQ_MODEL"]
+
+# Soft-defaulted, unlike the credentials above: the real number comes from running
+# `manage.py calibrate_threshold` against labelled questions, so 0.5 is only a starting point.
+RELEVANCE_THRESHOLD = float(os.environ.get("RELEVANCE_THRESHOLD", "0.5"))
+
+CALIBRATION_QUESTIONS_PATH = REPO_ROOT / "docs" / "calibration_questions.json"
 
 LOGGING = {
     "version": 1,

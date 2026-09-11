@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -e /app/shared
 
 COPY ruff.toml /app/ruff.toml
 COPY api /app/api
+COPY docs /app/docs
 
 WORKDIR /app/api
 

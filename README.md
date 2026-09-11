@@ -31,7 +31,7 @@ Project scaffolding in progress. This section will be updated as each feature la
 - [x] Chunking & Embedding
 - [x] Vector Store & Retrieval
 - [x] LLM Integration
-- [ ] RAG Answer API
+- [x] RAG Answer API
 - [ ] Chat Frontend
 
 ## Running locally
@@ -42,8 +42,7 @@ docker compose up
 ```
 
 Brings up `postgres`, `rabbitmq`, `weaviate`, the Celery `worker` (which applies migrations on
-start), and `api` on port 8000. `api` serves no routes yet — the answer endpoint lands with a later
-feature. `frontend` lands with a later feature too.
+start), and `api` on port 8000, serving `POST /api/ask`. `frontend` lands with a later feature.
 
 Chunking and embedding need a Voyage AI key (free tier), and answering needs a Groq key (free
 tier), both in `.env`:
@@ -87,4 +86,22 @@ answer arrive token by token):
 
 ```
 docker compose exec api python manage.py generate_answer "How do I get an app access token?"
+```
+
+Ask over HTTP — the answer streams back as Server-Sent Events (`citations`, then one `token` per
+token, then `done`; a question nothing relevant was retrieved for gets a single `fallback` event):
+
+```
+curl -N -X POST http://localhost:8000/api/ask \
+  -H "Content-Type: application/json" -H "Accept: text/event-stream" \
+  -d '{"question": "How do I get an app access token?"}'
+```
+
+That fallback fires when no retrieved chunk scores above `RELEVANCE_THRESHOLD` (default `0.5`, set
+it in `.env`). Pick the number from real data: label a few questions in
+`docs/calibration_questions.json` (`{"question": ..., "expected": "in_scope" | "out_of_scope"}`),
+then read the top score each one retrieves, grouped by label:
+
+```
+docker compose exec api python manage.py calibrate_threshold
 ```
