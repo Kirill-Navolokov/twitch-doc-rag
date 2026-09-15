@@ -1,0 +1,4 @@
+.git
+.agent
+frontend/node_modules
+frontend/.next

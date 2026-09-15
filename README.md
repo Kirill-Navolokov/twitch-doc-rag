@@ -32,7 +32,7 @@ Project scaffolding in progress. This section will be updated as each feature la
 - [x] Vector Store & Retrieval
 - [x] LLM Integration
 - [x] RAG Answer API
-- [ ] Chat Frontend
+- [x] Chat Frontend
 
 ## Running locally
 
@@ -42,7 +42,7 @@ docker compose up
 ```
 
 Brings up `postgres`, `rabbitmq`, `weaviate`, the Celery `worker` (which applies migrations on
-start), and `api` on port 8000, serving `POST /api/ask`. `frontend` lands with a later feature.
+start), `api` on port 8000 serving `POST /api/ask`, and the `frontend` chat UI on port 3000.
 
 Chunking and embedding need a Voyage AI key (free tier), and answering needs a Groq key (free
 tier), both in `.env`:
@@ -87,6 +87,14 @@ answer arrive token by token):
 ```
 docker compose exec api python manage.py generate_answer "How do I get an app access token?"
 ```
+
+Ask in the browser at <http://localhost:3000> — the retrieved passages appear first, each with its
+source and match score, then the answer streams in under them. History lives in the page for the
+session only and is gone on reload.
+
+The page calls `api` straight from the browser, at `NEXT_PUBLIC_API_URL` (default
+`http://localhost:8000`). Set it in `.env` only if `api` is published somewhere else; it has to be
+an address the browser can reach, so never the compose-internal `http://api:8000`.
 
 Ask over HTTP — the answer streams back as Server-Sent Events (`citations`, then one `token` per
 token, then `done`; a question nothing relevant was retrieved for gets a single `fallback` event):

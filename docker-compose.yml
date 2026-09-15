@@ -94,6 +94,22 @@ services:
       weaviate:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      # Reached from the user's browser, outside this network, so it has to be the published port of
+      # `api` on the host — never the internal hostname `api`.
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        # `api` defines no healthcheck, so this only orders the start. The UI reports a failure of
+        # its own if a question is asked before `api` is listening.
+        condition: service_started
+
 volumes:
   postgres_data:
   weaviate_data:
